@@ -1,0 +1,1 @@
+node --experimental-json-modules --experimental-specifier-resolution node index.js

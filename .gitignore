@@ -1,0 +1,12 @@
+test.json
+test2.json
+test.json
+
+/node_modules
+tsconfig.tsbuildinfo
+
+/data/token
+/data/guilds.json
+/data/itemSkillNames.json
+
+*.js
