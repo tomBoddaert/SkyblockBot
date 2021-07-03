@@ -1,6 +1,4 @@
-test.json
-test2.json
-test.json
+test*
 
 /node_modules
 tsconfig.tsbuildinfo
