@@ -1,12 +1,11 @@
 import { writeFile } from 'fs/promises';
 import axios from 'axios';
 
+import { IConfig } from 'types';
 import update from './update';
 import bot from './bot';
 
-const config = ( await import( './config.json' ) ).default as {
-    version: string
-};
+const config = ( await import( './config.json' ) ).default as IConfig;
 
 const versionStr = ( await import( './package.json' ) ).default.version;
 
@@ -17,7 +16,7 @@ const versionStr = ( await import( './package.json' ) ).default.version;
 
         if ( currentVersion[0] !== version[0] || currentVersion[1] !== version[1] ) update( );
 
-        let itemCollections: {
+        const itemCollections: {
             [ type: string ]: {
                 items: {
                     [ itemId: string ]: {
@@ -37,7 +36,7 @@ const versionStr = ( await import( './package.json' ) ).default.version;
 
             } );
 
-        let skillCollections: {
+        const skillCollections: {
             [ skillId: string ]: {
                 name: string
             }
@@ -53,8 +52,8 @@ const versionStr = ( await import( './package.json' ) ).default.version;
 
             } );
 
-        let items: { [ id: string ]: string } = { };
-        let skills: { [ id: string ]: string } = { };
+        const items: { [ id: string ]: string } = { };
+        const skills: { [ id: string ]: string } = { };
 
         Object.values( itemCollections ).forEach( type => {
             Object.entries( type.items ).forEach(
@@ -77,4 +76,5 @@ const versionStr = ( await import( './package.json' ) ).default.version;
     }
 
     bot( );
+
 } )( );

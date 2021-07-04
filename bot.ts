@@ -1,47 +1,26 @@
 import { readFile, writeFile } from 'fs/promises';
 import { Client, Collection, GuildMember, TextChannel } from 'discord.js';
-import { Job, scheduleJob } from 'node-schedule';
+import { scheduledJobs, scheduleJob } from 'node-schedule';
 
+import { IConfig, IGuildConfig, IGuildConfigs } from 'types';
 import commands from './commands/commands';
-import leaderboard from './leaderboard';
+import leaderboard from './send_leaderboard';
 
-const config = ( await import( './config.json' ) ).default as {
-    version: string,
-    defaultPrefix: string,
-    defaultCooldown: number,
-    developers: string[]
-};
+const config = ( await import( './config.json' ) ).default as IConfig;
 
-const guilds = ( await import( './data/guilds.json' ) ).default as {
-    [ id: string ]: {
-
-        channelId: string,
-        prefix: string | null,
-        defaultCooldown: number | null,
-        apiKey: string | null,
-        itemIds: string[],
-        skillIds: string[],
-        playerIds: string[],
-        cron: string | null,
-        icon: string,
-        colour: string
-
-    }
-};
+const guilds = ( await import( './data/guilds.json' ) ).default as IGuildConfigs;
 
 export default async ( ) => {
 
     const client = new Client( );
     const cooldowns = new Collection( );
 
-    const scheduledTasks: { [ channelId: string ]: Job } = {};
-
     client.once( 'ready', ( ) => {
 
         Object.entries( guilds ).forEach( ( [ guildId, guildConfig ] ) => {
 
             if ( guildConfig.cron ) {
-                scheduleJob( guildId, guildConfig.cron, ( ) => leaderboard( guildConfig ) );
+                scheduleJob( guildId, guildConfig.cron, ( ) => leaderboard( guildConfig, config, client ) );
             }
 
         } );
@@ -56,27 +35,27 @@ export default async ( ) => {
         // If message is from a bot, stop
         if ( message.author.bot ) return;
 
-        let guildConfig = guilds[ message.guild?.id ?? '' ];
+        const guildConfig: IGuildConfig | undefined = guilds[ message.guild?.id ?? '' ];
 
         // If the message does not start with the prefix, stop
         if ( !message.content.startsWith( guildConfig?.prefix ?? config.defaultPrefix ) ) return;
 
         // Split command into words
-        const args = message.content.slice( (guildConfig?.prefix ?? config.defaultPrefix).length ).split( / +/ );
+        const args = message.content.slice( ( guildConfig?.prefix ?? config.defaultPrefix ).length ).split( / +/ );
         const commandName = args.shift( )?.toLowerCase( );
-        const command = commands.find( cmd => cmd.name === commandName || cmd.aliases?.includes( cmd.name ) );
+        const command = commands.find( cmd => cmd.name === commandName || cmd.aliases?.includes( commandName ?? '' ) );
 
         // If the command does not exist, warn user and stop
         if ( !command ) {
             return await message.reply( `that is not a valid command!` );
         }
 
-        // ! Add argument checking
-
         // If the command is only avaliable in guilds, and the current channel is not in one, warn the user and stop
         if ( command.guildOnly && message.channel.type !== 'text' ) {
             return await message.channel.send( `That command is only avaliable in servers!` );
         }
+
+        // ! Add argument checking
 
         // Check perm level, if not high enough, warn user and stop
         if ( command.requiresPermLevel ) {
@@ -111,7 +90,7 @@ export default async ( ) => {
             const expirationTime = ( timestamps.get( message.author.id ) ?? 0 ) + cooldown;
 
             if ( now < expirationTime ) {
-                let timeLeft = ~~( ( expirationTime - now ) / 1000 ) + 1;
+                const timeLeft = ~~( ( expirationTime - now ) / 1000 ) + 1;
                 return await message.reply( `please wait \`${ timeLeft }\` seconds before using \`${ command.name }\` again!` );
             }
         }
@@ -120,10 +99,10 @@ export default async ( ) => {
         setTimeout( ( ) => timestamps.delete( message.author.id ), cooldown );
 
         try {
-            command.execute( message, args );
+            command.execute( message, args, guildConfig, config );
         } catch ( error ) {
             console.error( error );
-            message.reply( `something went wrong with that last command!` );
+            await message.reply( `something went wrong with that last command!` );
         }
 
     } );
@@ -131,7 +110,7 @@ export default async ( ) => {
     // Setup guild config when added
     client.on( 'guildCreate', async guild => {
 
-        let textChannels = guild.channels.cache.filter(
+        const textChannels = guild.channels.cache.filter(
             channel => channel.isText( ) && ( channel.permissionsFor( guild.me as GuildMember )?.has( 'SEND_MESSAGES' ) ?? false )
         );
 
@@ -139,7 +118,7 @@ export default async ( ) => {
             return guild.leave();
         }
 
-        let channel = ( textChannels.find( channel => channel.name === 'general' )
+        const channel = ( textChannels.find( channel => channel.name === 'general' )
             ?? textChannels.first( ) ) as TextChannel;
 
         guilds[ guild.id ] = {
@@ -152,17 +131,17 @@ export default async ( ) => {
             skillIds: [ ],
             playerIds: [ ],
             cron: null,
-            icon: 'default',
-            colour: '0xA3A3A3'
+            icon: null,
+            colour: null
             
         }
 
         await writeFile( './data/guilds.json', JSON.stringify( guilds ) )
-            .catch( err => {
+            .catch( error => {
                 delete guilds[ guild.id ];
                 channel.send( 'Error setting up guild configuration, please contact my owner or developer!' );
                 guild.leave( );
-                console.error( err );
+                console.error( error );
             } );
 
         channel.send( `Please use \`${ config.defaultPrefix }set_api_key\` to add your skyblock API key` );
@@ -174,11 +153,12 @@ export default async ( ) => {
     client.on( 'guildDelete', async guild => {
 
         delete guilds[ guild.id ];
+        scheduledJobs[ guild.id ]?.cancel( );
 
         await writeFile( './data/guilds.json', JSON.stringify( guilds ) )
             .catch( console.error );
             
-    })
+    } );
 
     // Log in
     client.login( ( await readFile( './data/token' ) ).toString( ) );

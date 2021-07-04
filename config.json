@@ -2,6 +2,8 @@
     "version": "0.0.0",
     "defaultPrefix": "sb!",
     "defaultCooldown": 3,
+    "defaultColour": "0xA3A3A3",
+    "defaultIcon": "skyblock.png",
     "developers": [
 
     ]
