@@ -1,4 +1,3 @@
-import { Message } from 'discord.js';
 import { ICommand } from 'types';
 
 // Command imports
