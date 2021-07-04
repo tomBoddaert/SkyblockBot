@@ -26,4 +26,4 @@ Copy and paste any error messages here
 ```
 
 
-**REMEMBER: never provide your `token` file or unsanitised `guilds.json` unless asked to do so privately by @tomBoddaert**
+**REMEMBER: never provide your `token` file or unsanitised `guilds.json` unless asked to do so privately by [@tomBoddaert](https://github.com/tomBoddaert)**
