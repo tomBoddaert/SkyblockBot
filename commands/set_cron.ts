@@ -45,7 +45,7 @@ const command: ICommand = {
             let success = scheduleJob( message.guild.id, args.slice( 0, 5 ).join( ' ' ), ( ) => leaderboard( guildConfig, config, message.client ) );
 
             if ( !success ) {
-                scheduledJobs[ message.guild.id ].cancel();
+                scheduledJobs[ message.guild.id ].cancel( );
                 if ( guildConfig.cron ) scheduleJob( message.guild.id, guildConfig.cron, ( ) => leaderboard( guildConfig, config, message.client ) );
                 return await message.reply( `that not a valid cron expression ( make sure ranges are in incresing order ), please use \`${ guildConfig.prefix ?? config.defaultPrefix }set_cron [ cron expression ]\`!` );
             }

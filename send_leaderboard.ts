@@ -141,14 +141,14 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
             Object.entries( member[ 0 ] ).reduce(
                 ( acc, [ itemId, score ] ) => `\
 ${ acc }${ acc === '' ? '' : '\n' }\
-${ score > 1_000_000_000 ? score.toPrecision( 3 ) : score.toString().replace( /\B(?=(\d{3})+(?!\d))/g, ',' ) } \
+${ score > 1_000_000_000 ? score.toPrecision( 3 ) : score.toString( ).replace( /\B(?=(\d{3})+(?!\d))/g, ',' ) } \
 ${ itemSkillNames.items[ itemId ] }`,
                 ''
             ) +
             Object.entries( member[ 1 ] ).reduce(
                 ( acc, [ skillId, score ] ) => `\
 ${ acc }
-${ score > 1_000_000_000 ? score.toPrecision( 3 ) : score.toString().replace( /\B(?=(\d{3})+(?!\d))/g, ',' ) } \
+${ score > 1_000_000_000 ? score.toPrecision( 3 ) : score.toString( ).replace( /\B(?=(\d{3})+(?!\d))/g, ',' ) } \
 ${ itemSkillNames.skills[ skillId ] } xp`,
                 ''
             )

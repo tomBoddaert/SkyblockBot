@@ -115,7 +115,7 @@ export default async ( ) => {
         );
 
         if ( !textChannels.reduce( acc => acc + 1, 0 ) ) {
-            return guild.leave();
+            return guild.leave( );
         }
 
         const channel = ( textChannels.find( channel => channel.name === 'general' )
