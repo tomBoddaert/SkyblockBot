@@ -22,7 +22,7 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
 
     guildConfig.playerIds.forEach( ( uuid: string ) => {
 
-        promises.push( axios.get( `https://api.hypixel.net/skyblock/profiles?key=${ guildConfig.apiKey }&uuid=${ uuid }`, { proxy: { host: 'localhost', port: 5555 } } )
+        promises.push( axios.get( `https://api.hypixel.net/skyblock/profiles?key=${ guildConfig.apiKey }&uuid=${ uuid }` )
             .catch( console.error ) );
 
         promises.push( axios.get( `https://api.mojang.com/user/profiles/${ uuid.replace( /-/g, '' ) }/names` )
