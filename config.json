@@ -4,7 +4,8 @@
     "defaultCooldown": 3,
     "defaultColour": "0xA3A3A3",
     "defaultIcon": "skyblock.png",
+    "adminRoleName": "skyblockbotadmin",
     "developers": [
-
+        "416282090397761547"
     ]
 }

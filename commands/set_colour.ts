@@ -6,10 +6,10 @@ const icons = await readdir( './data/icons' );
 
 const command: ICommand = {
 
-    name: 'set_icon',
-    description: 'Sets the leaderboard icon',
-    aliases: [ 'setic' ],
-    usage: '< icon name >',
+    name: 'set_colour',
+    description: 'Sets the leaderboard colour',
+    aliases: [ 'setco', 'set_color' ],
+    usage: '< colour hex value >',
 
     guildOnly: true,
     requiresPermLevel: 1,
@@ -18,15 +18,15 @@ const command: ICommand = {
 
         if ( !guildConfig || !message.guild?.id ) return;
 
-        const iconName = args.join( ' ' ).toLowerCase( );
+        const colourRegex = /^(?:(?:0x)|#)?((\d|[a-f]){6})$/
 
-        const icon = icons.find( name => iconName === name.toLowerCase( ) );
+        const colour = colourRegex.exec( args[ 0 ].toLowerCase( ) );
 
-        if ( !icon ) {
-            return await message.reply( `that is not a valid icon, please use \`${ guildConfig.prefix ?? config.defaultPrefix }list_icons\` to list all avaliable icons, then \`${ guildConfig.prefix ?? config.defaultPrefix }add_icon < icon name >\` to set it!` );
+        if ( !colour ) {
+            return await message.reply( `that is not a valid hex colour!` );
         }
 
-        guildConfig.icon = icon;
+        guildConfig.colour = colour[ 1 ];
 
         const guildConfigs = ( await import( '../data/guilds.json' ) ).default as IGuildConfigs;
 
@@ -35,7 +35,7 @@ const command: ICommand = {
         try {
 
             await writeFile( './data/guilds.json', JSON.stringify( guildConfigs ) );
-            await message.reply( 'icon set' );
+            await message.reply( 'colour set' );
 
         } catch ( error ) {
 

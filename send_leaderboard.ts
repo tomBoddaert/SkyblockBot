@@ -7,7 +7,15 @@ const itemSkillNames = ( await import( './data/itemSkillNames.json' ) ).default 
 const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: Client ) => {
     
     if ( !guildConfig.apiKey ) {
-        return ( client.channels.cache.get( guildConfig.channelId ) as TextChannel ).send( `API key not configured! Please use \`${ guildConfig.prefix ?? config.defaultPrefix }set_api_key < Hypixel API key >\`!` );
+        return await ( client.channels.cache.get( guildConfig.channelId ) as TextChannel ).send( `API key not set! Please use \`${ guildConfig.prefix ?? config.defaultPrefix }set_api_key < Hypixel API key >\`!` );
+    }
+
+    if ( !guildConfig.playerIds.length ) {
+        return await ( client.channels.cache.get( guildConfig.channelId ) as TextChannel ).send( `Leaderboard players not set! Please use \`${ guildConfig.prefix ?? config.defaultPrefix }add_player < player name >\` to add a player!` );
+    }
+
+    if ( !guildConfig.itemIds.length && !guildConfig.skillIds.length ) {
+        return await ( client.channels.cache.get( guildConfig.channelId ) as TextChannel ).send( `Leaderboard items and skills not set! Please use \`${ guildConfig.prefix ?? config.defaultPrefix }add_item < item name >\` to add an item or \`${ guildConfig.prefix ?? config.defaultPrefix }add_skill < skill name >\` to add a skill!` );
     }
 
     const promises: Promise< any >[ ] = [ ];
@@ -77,7 +85,7 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
 
                     if ( memberUuid === uuid && member.collection ) {
                         guildConfig.itemIds.forEach( itemId => {
-                            if ( member.collection[ itemId ] > ( itemScores[ itemId ] ?? -1 ) ){
+                            if ( member.collection[ itemId ] > ( itemScores[ itemId ] ?? -1 ) ) {
 
                                 itemScores[ itemId ] = member.collection[ itemId ];
 
@@ -85,7 +93,7 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
                         } );
 
                         guildConfig.skillIds.forEach( skillId => {
-                            if ( ~~member[ skillId ] > ( skillScores[ skillId ] ?? -1 ) ){
+                            if ( ~~member[ skillId ] > ( skillScores[ skillId ] ?? -1 ) ) {
 
                                 skillScores[ skillId ] = ~~member[ skillId ];
 

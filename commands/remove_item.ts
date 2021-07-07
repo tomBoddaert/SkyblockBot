@@ -37,7 +37,10 @@ const command: ICommand = {
         guildConfigs[ message.guild.id ] = guildConfig;
 
         try {
+
             await writeFile( './data/guilds.json', JSON.stringify( guildConfigs ) );
+            await message.reply( `removed \`${ item[ 1 ] }\` from the leaderboard` );
+
         } catch ( error ) {
 
             await message.reply( 'something went wrong!' );

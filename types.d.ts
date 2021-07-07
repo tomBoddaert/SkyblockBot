@@ -7,6 +7,7 @@ export interface IConfig {
     defaultCooldown: number,
     defaultColour: string,
     defaultIcon: string,
+    adminRoleName: string,
     developers: string[ ]
 
 }

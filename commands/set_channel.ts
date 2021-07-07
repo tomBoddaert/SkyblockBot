@@ -33,7 +33,10 @@ const command: ICommand = {
         guildConfigs[ message.guild.id ] = guildConfig;
 
         try {
+
             await writeFile( './data/guilds.json', JSON.stringify( guildConfigs ) );
+            await message.reply( `channel set to #<${ channelId }>` );
+
         } catch ( error ) {
 
             await message.reply( 'something went wrong!' );

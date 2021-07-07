@@ -43,7 +43,10 @@ const command: ICommand = {
         guildConfigs[ message.guild.id ] = guildConfig;
 
         try {
+
             await writeFile( './data/guilds.json', JSON.stringify( guildConfigs ) );
+            await message.reply( `added \`${ res.data.name }\` to the leaderboard` );
+
         } catch ( error ) {
 
             await message.reply( 'something went wrong!' );

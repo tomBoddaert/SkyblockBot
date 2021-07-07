@@ -20,24 +20,27 @@ const command: ICommand = {
 
         const skillName = args.join( ' ' ).toLowerCase( );
 
-        const item = Object.entries( skills ).find( ( [, name ] ) => skillName === name.toLowerCase( ) );
+        const skill = Object.entries( skills ).find( ( [, name ] ) => skillName === name.toLowerCase( ) );
 
-        if ( !item ) {
+        if ( !skill ) {
             return await message.reply( `that is not a valid skill, please use \`${ guildConfig.prefix ?? config.defaultPrefix }list_skills\` to list all avaliable skills, then \`${ guildConfig.prefix ?? config.defaultPrefix }add_skill < skill name >\` to add one!` );
         }
 
-        if ( guildConfig.skillIds.includes( item[ 0 ] ) ) {
+        if ( guildConfig.skillIds.includes( skill[ 0 ] ) ) {
             return await message.reply( `that skill is already on the leaderboard!` );
         }
 
-        guildConfig.skillIds.push( item[ 0 ] );
+        guildConfig.skillIds.push( skill[ 0 ] );
 
         const guildConfigs = ( await import( '../data/guilds.json' ) ).default as IGuildConfigs;
 
         guildConfigs[ message.guild.id ] = guildConfig;
 
         try {
+
             await writeFile( './data/guilds.json', JSON.stringify( guildConfigs ) );
+            await message.reply( `added \`${ skill[ 1 ] }\` to the leaderboard` );
+
         } catch ( error ) {
 
             await message.reply( 'something went wrong!' );

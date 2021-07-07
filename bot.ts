@@ -62,7 +62,7 @@ export default async ( ) => {
             let userPermLevel = 0;
             if ( message.author.id === message.guild?.ownerID ) {
                 userPermLevel = 2;
-            } else if ( message.member?.roles.cache.some( role => role.name.toLowerCase( ) === 'skyblockbotadmin' ) ) {
+            } else if ( message.member?.roles.cache.some( role => role.name.toLowerCase( ) === config.adminRoleName ) ) {
                 userPermLevel = 1;
             }
 
@@ -137,15 +137,20 @@ export default async ( ) => {
         }
 
         await writeFile( './data/guilds.json', JSON.stringify( guilds ) )
-            .catch( error => {
+            .catch( async error => {
                 delete guilds[ guild.id ];
-                channel.send( 'Error setting up guild configuration, please contact my owner or developer!' );
-                guild.leave( );
+                await channel.send( 'Error setting up guild configuration, please contact my owner or developer!' );
+                await guild.leave( );
                 console.error( error );
             } );
 
-        channel.send( `Please use \`${ config.defaultPrefix }set_api_key\` to add your skyblock API key` );
-        channel.send( `For help, type \`${ config.defaultPrefix }help\`` );
+        await guild.roles.create( { data: { name: config.adminRoleName } } )
+            .catch( async error => {
+                await channel.send( `Please create a role called \`${ config.adminRoleName }\` because I couldn\'t!` )
+            } );
+
+        await channel.send( `Please use \`${ config.defaultPrefix }set_api_key\` to add your skyblock API key` );
+        await channel.send( `For help, type \`${ config.defaultPrefix }help\`` );
 
     } );
 

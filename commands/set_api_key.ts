@@ -31,7 +31,11 @@ const command: ICommand = {
         guildConfigs[ message.guild.id ] = guildConfig;
 
         try {
+
             await writeFile( './data/guilds.json', JSON.stringify( guildConfigs ) );
+            await message.delete( );
+            await message.reply( 'API key set' );
+
         } catch ( error ) {
 
             await message.reply( 'something went wrong!' );

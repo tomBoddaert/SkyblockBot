@@ -6,27 +6,25 @@ const icons = await readdir( './data/icons' );
 
 const command: ICommand = {
 
-    name: 'set_icon',
-    description: 'Sets the leaderboard icon',
-    aliases: [ 'setic' ],
-    usage: '< icon name >',
+    name: 'set_prefix',
+    description: 'Sets the Skyblock Bot\'s prefix',
+    aliases: [ 'setp' ],
+    usage: '< prefix >',
 
     guildOnly: true,
-    requiresPermLevel: 1,
+    requiresPermLevel: 2,
 
     execute: async ( message, args, guildConfig, config ) => {
 
         if ( !guildConfig || !message.guild?.id ) return;
 
-        const iconName = args.join( ' ' ).toLowerCase( );
+        const prefix = args.join( ' ' );
 
-        const icon = icons.find( name => iconName === name.toLowerCase( ) );
-
-        if ( !icon ) {
-            return await message.reply( `that is not a valid icon, please use \`${ guildConfig.prefix ?? config.defaultPrefix }list_icons\` to list all avaliable icons, then \`${ guildConfig.prefix ?? config.defaultPrefix }add_icon < icon name >\` to set it!` );
+        if ( !prefix ) {
+            return await message.reply( `no prefix supplied!` );
         }
 
-        guildConfig.icon = icon;
+        guildConfig.prefix = prefix;
 
         const guildConfigs = ( await import( '../data/guilds.json' ) ).default as IGuildConfigs;
 
@@ -35,7 +33,7 @@ const command: ICommand = {
         try {
 
             await writeFile( './data/guilds.json', JSON.stringify( guildConfigs ) );
-            await message.reply( 'icon set' );
+            await message.reply( `prefix set to \`${ prefix }\`` );
 
         } catch ( error ) {
 
