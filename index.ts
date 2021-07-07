@@ -3,7 +3,6 @@ import axios from 'axios';
 
 import { IConfig } from 'types';
 import update from './update';
-import bot from './bot';
 
 const config = ( await import( './config.json' ) ).default as IConfig;
 
@@ -100,4 +99,4 @@ const versionStr = ( await import( './package.json' ) ).default.version;
     } ) );
 }
 
-bot( );
+( await import( './bot') ).default()

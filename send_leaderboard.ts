@@ -22,7 +22,7 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
 
     guildConfig.playerIds.forEach( ( uuid: string ) => {
 
-        promises.push( axios.get( `https://api.hypixel.net/skyblock/profiles?key=${ guildConfig.apiKey }&uuid=${ uuid }` )
+        promises.push( axios.get( `https://api.hypixel.net/skyblock/profiles?key=${ guildConfig.apiKey }&uuid=${ uuid }`, { proxy: { host: 'localhost', port: 5555 } } )
             .catch( console.error ) );
 
         promises.push( axios.get( `https://api.mojang.com/user/profiles/${ uuid.replace( /-/g, '' ) }/names` )
@@ -76,9 +76,18 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
 
             if ( !res.data.profiles ) return;
 
+            const uuid = res.config.url.split( 'uuid=' )[ 1 ].replace( /-/g, '' );
+
+            if ( !Object.values( res.data.profiles[ 0 ].members )[ 0 ].collection ) {
+                return memberData[ uuid ] = [
+                    { },
+                    { },
+                    -1
+                ];
+            }
+
             const itemScores: { [ itemId: string]: number } = { };
             const skillScores: { [ skillId: string ]: number } = { };
-            const uuid = res.config.url.split( 'uuid=' )[ 1 ].replace( /-/g, '' );
 
             res.data.profiles.forEach( ( profile ) => {
                 Object.entries( profile.members ).forEach( ( [ memberUuid, member ] ) => {
@@ -141,11 +150,18 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
     // ! Rewrite with `( [, [,, m1 ] ], [, [,, m2 ] ] ) => m2 - m1` ?
 
     Object.entries( memberData ).sort( ( m1, m2 ) => m2[ 1 ][ 2 ] - m1[ 1 ][ 2 ] ).forEach( ( [ memberId, member ] ) => {
-        if ( !Object.keys( member[ 0 ] ).length && !Object.keys( member[ 1 ] ).length ) {
+
+        if ( member[ 2 ] === -1 ) {
             return newEmbed.addField( memberNames[ memberId ], '( API off )' );
-        };
+        }
+
+        if ( !Object.keys( member[ 0 ] ).length && !Object.keys( member[ 1 ] ).length ) {
+        }
+
         newEmbed.addField(
+
             memberNames[ memberId ],
+
             Object.entries( member[ 0 ] ).reduce(
                 ( acc, [ itemId, score ] ) => `\
 ${ acc }${ acc === '' ? '' : '\n' }\
@@ -153,6 +169,7 @@ ${ score > 1_000_000_000 ? score.toPrecision( 3 ) : score.toString( ).replace( /
 ${ itemSkillNames.items[ itemId ] }`,
                 ''
             ) +
+
             Object.entries( member[ 1 ] ).reduce(
                 ( acc, [ skillId, score ] ) => `\
 ${ acc }
@@ -160,7 +177,12 @@ ${ score > 1_000_000_000 ? score.toPrecision( 3 ) : score.toString( ).replace( /
 ${ itemSkillNames.skills[ skillId ] } xp`,
                 ''
             )
+
         );
+    } );
+
+    guildConfig.playerIds.filter( id => !Object.keys( memberData ).includes( id ) ).forEach( memberId => {
+        newEmbed.addField( memberNames[ memberId ], '( not on SkyBlock )');
     } );
 
     ( client.channels.cache.get( guildConfig.channelId ) as TextChannel )
