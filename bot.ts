@@ -144,10 +144,12 @@ export default async ( ) => {
                 console.error( error );
             } );
 
-        await guild.roles.create( { data: { name: config.adminRoleName } } )
-            .catch( async error => {
-                await channel.send( `Please create a role called \`${ config.adminRoleName }\` because I couldn\'t!` )
-            } );
+        if ( !guild.roles.cache.some( role => role.name.toLowerCase( ) === config.adminRoleName ) ) {
+            await guild.roles.create( { data: { name: config.adminRoleName } } )
+                .catch( async ( ) => {
+                    await channel.send( `Please create a role called \`${ config.adminRoleName }\` because I couldn\'t!` )
+                } );
+        }
 
         await channel.send( `Please use \`${ config.defaultPrefix }set_api_key\` to add your skyblock API key` );
         await channel.send( `For help, type \`${ config.defaultPrefix }help\`` );
@@ -166,6 +168,16 @@ export default async ( ) => {
     } );
 
     // Log in
-    client.login( ( await readFile( './data/token' ) ).toString( ) );
+    try {
+        await client.login( ( await readFile( './data/token' ) ).toString( ) );
+    } catch ( error ) {
+
+        if ( error.code === 'TOKEN_INVALID' ) {
+            throw new Error( 'Token ( from ./data/token ) does not match a Discord bot token!' );
+        } else {
+            throw error;
+        }
+    
+    }
 
 };

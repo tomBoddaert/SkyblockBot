@@ -4,7 +4,7 @@ const skills = ( ( await import( '../data/itemSkillNames.json' ) ).default as II
 
 const command: ICommand = {
 
-    name: 'list_skillss',
+    name: 'list_skills',
     description: 'Lists all avaliable skills',
     aliases: [ 'lss' ],
 
