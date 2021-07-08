@@ -185,9 +185,14 @@ ${ itemSkillNames.skills[ skillId ] } xp`,
         newEmbed.addField( memberNames[ memberId ], '( not on SkyBlock )');
     } );
 
-    ( client.channels.cache.get( guildConfig.channelId ) as TextChannel )
-        .send( newEmbed )
-        .catch( console.error )
+    const channel = client.channels.cache.get( guildConfig.channelId );
+
+    if ( channel?.type !== 'text' ) {
+        throw new Error( 'Channel not found or not text ( send_leaderboard )!' );
+    }
+
+    await ( channel as TextChannel ).send( newEmbed )
+        .catch( console.error );
 
 };
 

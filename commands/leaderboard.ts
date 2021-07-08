@@ -12,8 +12,14 @@ const command: ICommand = {
     guildOnly: true,
 
     execute: ( message, args, guildConfig, config ) => {
+
         if ( !guildConfig ) return;
-        leaderboard( guildConfig, config, message.client );
+
+        leaderboard( guildConfig, config, message.client )
+            .catch( async ( ) => {
+                await message.reply( `cannot sent message to channel, use \`${ guildConfig.prefix ?? config.defaultPrefix }set_channel #< channel name >\` to set the leaderboard channel` );
+            } );
+
     }
 }
 

@@ -20,7 +20,9 @@ export default async ( ) => {
         Object.entries( guilds ).forEach( ( [ guildId, guildConfig ] ) => {
 
             if ( guildConfig.cron ) {
-                scheduleJob( guildId, guildConfig.cron, ( ) => leaderboard( guildConfig, config, client ) );
+                scheduleJob( guildId, guildConfig.cron, ( ) => 
+                    leaderboard( guildConfig, config, client ).catch( ( ) => undefined )
+                );
             }
 
         } );
