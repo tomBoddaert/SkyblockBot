@@ -12,7 +12,7 @@ const versionStr = ( await import( './package.json' ) ).default.version;
     const version = versionStr.split( '.' ).map( parseInt );
     const currentVersion = config.version.split( '.' ).map( parseInt );
 
-    if ( currentVersion[0] !== version[0] || currentVersion[1] !== version[1] ) update( );
+    if ( currentVersion[0] !== version[0] || currentVersion[1] !== version[1] ) update( ( currentVersion as [ number, number, number] ), config );
 
     const dataFiles = ( await readdir( './data', { withFileTypes: true } ) ).filter( dirent => dirent.isFile( ) );
 

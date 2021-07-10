@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { Client, MessageEmbed, TextChannel } from 'discord.js';
 import { IConfig, IGuildConfig, IItemSkillNames } from 'types';
+import { getName, getItemsAndSkills, logCache } from './apiCalls';
 
 const itemSkillNames = ( await import( './data/itemSkillNames.json' ) ).default as IItemSkillNames;
 
@@ -18,127 +18,23 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
         return await ( client.channels.cache.get( guildConfig.channelId ) as TextChannel ).send( `Leaderboard items and skills not set! Please use \`${ guildConfig.prefix ?? config.defaultPrefix }add_item < item name >\` to add an item or \`${ guildConfig.prefix ?? config.defaultPrefix }add_skill < skill name >\` to add a skill!` );
     }
 
-    const promises: Promise< any >[ ] = [ ];
+    const names: { [ uuid: string ]: string } = { };
 
-    guildConfig.playerIds.forEach( ( uuid: string ) => {
-
-        promises.push( axios.get( `https://api.hypixel.net/skyblock/profiles?key=${ guildConfig.apiKey }&uuid=${ uuid }` )
-            .catch( console.error ) );
-
-        promises.push( axios.get( `https://api.mojang.com/user/profiles/${ uuid.replace( /-/g, '' ) }/names` )
-            .catch( console.error ) );
-
-    } );
-
-    const data = await Promise.all( promises );
+    ( await Promise.all( guildConfig.playerIds.map( getName ) ) )
+        .forEach( ( [ uuid, name ] ) => {
+            names[ uuid ] = name;
+        } );
 
     const memberData: {
         [ uuid: string ]: [
-            { [ itemId: string]: number },
-            { [ skillId: string ]: number },
+            { [ itemId: string ]: number } | undefined,
+            { [ skillId: string ]: number } | undefined,
             number
-        ]
-    } = { };
-
-    const memberNames: { [ uuid: string ]: string } = { };
-
-    data.forEach( ( res: {
-
-        config: {
-            url: string
-        },
-
-        data: {
-
-            success: boolean,
-
-            profiles: {
-                members: {
-
-                    [ key: string ]: any,
-                    collection: { [ key: string ]: number }
-
-                }[ ]
-            }[ ]
-
-        } | {
-
-            name: string,
-            changedToAt: number
-
-        }[ ]
-
-    } ) => {
+    ] } = { };
         
-        if ( !Array.isArray( res.data ) ) {
-
-            if ( !res.data.success ) return console.error( 'Skyblock API failture!' );
-
-            if ( !res.data.profiles ) return;
-
-            const uuid = res.config.url.split( 'uuid=' )[ 1 ].replace( /-/g, '' );
-
-            if ( !Object.values( res.data.profiles[ 0 ].members )[ 0 ].collection ) {
-                return memberData[ uuid ] = [
-                    { },
-                    { },
-                    -1
-                ];
-            }
-
-            const itemScores: { [ itemId: string]: number } = { };
-            const skillScores: { [ skillId: string ]: number } = { };
-
-            res.data.profiles.forEach( ( profile ) => {
-                Object.entries( profile.members ).forEach( ( [ memberUuid, member ] ) => {
-
-                    if ( memberUuid === uuid && member.collection ) {
-                        guildConfig.itemIds.forEach( itemId => {
-                            if ( member.collection[ itemId ] > ( itemScores[ itemId ] ?? -1 ) ) {
-
-                                itemScores[ itemId ] = member.collection[ itemId ];
-
-                            }
-                        } );
-
-                        guildConfig.skillIds.forEach( skillId => {
-                            if ( ~~member[ skillId ] > ( skillScores[ skillId ] ?? -1 ) ) {
-
-                                skillScores[ skillId ] = ~~member[ skillId ];
-
-                            }
-                        } );
-                    }
-
-                } );
-            } );
-
-            return memberData[ uuid ] = [
-                itemScores,
-                skillScores,
-                Object.values( itemScores ).reduce( ( acc, curr ) => acc + curr, 0 )
-            ];
-        }
-
-        const latestName = { name: '', time: -1 };
-        const uuid = res.config.url.replace( 'https://api.mojang.com/user/profiles/', '' ).replace( '/names', '' );
-
-        res.data.forEach( name => {
-
-            if ( !name.changedToAt && !latestName.name ) {
-                return latestName.name = name.name;
-            }
-
-            if ( name.changedToAt > latestName.time ) {
-                latestName.name = name.name;
-                latestName.time = name.changedToAt;
-            }
-
-        } );
-
-        memberNames[ uuid ] = latestName.name;
-
-    } );
+    ( await Promise.all( guildConfig.playerIds.map( uuid =>
+        getItemsAndSkills( uuid, guildConfig.itemIds, guildConfig.skillIds, guildConfig.apiKey as string )
+    ) ) ).forEach( ( [ uuid, ...data ] ) => memberData[ uuid ] = data );
 
     const newEmbed = new MessageEmbed( )
         .setTimestamp( )
@@ -147,42 +43,37 @@ const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: 
         .attachFiles( [ `./data/icons/${ guildConfig.icon ?? config.defaultIcon }` ] )
         .setThumbnail( `attachment://${ guildConfig.icon ?? config.defaultIcon }` );
 
-    // ! Rewrite with `( [, [,, m1 ] ], [, [,, m2 ] ] ) => m2 - m1` ?
-
-    Object.entries( memberData ).sort( ( m1, m2 ) => m2[ 1 ][ 2 ] - m1[ 1 ][ 2 ] ).forEach( ( [ memberId, member ] ) => {
+    Object.entries( memberData ).sort( ( [, [,, m1 ] ], [, [,, m2 ] ] ) => m2 - m1 ).forEach( ( [ memberId, member ] ) => {
 
         if ( member[ 2 ] === -1 ) {
-            return newEmbed.addField( memberNames[ memberId ], '( API off )' );
-        }
-
-        if ( !Object.keys( member[ 0 ] ).length && !Object.keys( member[ 1 ] ).length ) {
+            return newEmbed.addField( names[ memberId ], '( API off )' );
         }
 
         newEmbed.addField(
 
-            memberNames[ memberId ],
+            names[ memberId ],
 
-            Object.entries( member[ 0 ] ).reduce(
+            ( member[ 0 ] ? Object.entries( member[ 0 ] ).reduce(
                 ( acc, [ itemId, score ] ) => `\
 ${ acc }${ acc === '' ? '' : '\n' }\
 ${ score > 1_000_000_000 ? score.toPrecision( 3 ) : score.toString( ).replace( /\B(?=(\d{3})+(?!\d))/g, ',' ) } \
 ${ itemSkillNames.items[ itemId ] }`,
                 ''
-            ) +
+            ) : '' ) +
 
-            Object.entries( member[ 1 ] ).reduce(
+            ( member[ 1 ] ? Object.entries( ( member[ 1 ] as { [ skillId: string]: number } ) ).reduce(
                 ( acc, [ skillId, score ] ) => `\
 ${ acc }
 ${ score > 1_000_000_000 ? score.toPrecision( 3 ) : score.toString( ).replace( /\B(?=(\d{3})+(?!\d))/g, ',' ) } \
 ${ itemSkillNames.skills[ skillId ] } xp`,
                 ''
-            )
+            ) : '' )
 
         );
     } );
 
     guildConfig.playerIds.filter( id => !Object.keys( memberData ).includes( id ) ).forEach( memberId => {
-        newEmbed.addField( memberNames[ memberId ], '( not on SkyBlock )');
+        newEmbed.addField( names[ memberId ], '( not on SkyBlock )');
     } );
 
     const channel = client.channels.cache.get( guildConfig.channelId );

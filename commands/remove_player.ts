@@ -25,8 +25,10 @@ const command: ICommand = {
             return await message.reply( `that is invalid, please use \`${ guildConfig.prefix ?? config.defaultPrefix }remove_player < player name >\`!` );
         }
 
-        let res = await axios.get( `https://api.mojang.com/users/profiles/minecraft/${ args[ 0 ] }` )
-            .catch( console.error );
+        let res = await axios.get(
+            `https://api.mojang.com/users/profiles/minecraft/${ args[ 0 ] }`,
+            config.proxy.on ? { proxy: { host: config.proxy.host, port: config.proxy.port } } : undefined
+        ).catch( console.error );
 
         if ( !res || res.statusText !== 'OK' ) {
             return await message.reply( 'that player does not exist!' );

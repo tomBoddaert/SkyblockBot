@@ -1,11 +1,20 @@
 {
-    "version": "0.0.0",
+    "version": "1.1.0",
     "defaultPrefix": "sb!",
     "defaultCooldown": 3,
     "defaultColour": "0xA3A3A3",
     "defaultIcon": "skyblock.png",
     "adminRoleName": "skyblockbotadmin",
+    "cacheLengths": {
+        "player": 7200,
+        "property": 300
+    },
     "developers": [
         "416282090397761547"
-    ]
+    ],
+    "proxy": {
+        "on": false,
+        "host": "localhost",
+        "port": 5555
+    }
 }

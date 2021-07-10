@@ -8,7 +8,16 @@ export interface IConfig {
     defaultColour: string,
     defaultIcon: string,
     adminRoleName: string,
-    developers: string[ ]
+    cacheLengths: {
+        player: number,
+        property: number
+    },
+    developers: string[ ],
+    proxy: {
+        on: boolean,
+        host: 'localhost' | string,
+        port: 5555 | number
+    }
 
 }
 
