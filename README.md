@@ -50,7 +50,6 @@ If you find any bugs, open a 'Bug report' issue [here](https://github.com/tomBod
 ## Planned features
 
 - Switch to Mojang POST API
-- Caching
 - API rate checks
 - Pet tracking
 - Online status
