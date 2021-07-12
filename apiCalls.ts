@@ -27,8 +27,8 @@ async function getName( uuid: string ) {
     let player = cache[ uuid ];
 
     if ( player && player.name && ( player.name as [ string, number ] )[ 1 ] >= now ) {
-        clearInterval( player.clear );
-        player.clear = setInterval( removePlayerCache, config.cacheLengths.player * 1000, uuid );
+        clearTimeout( player.clear );
+        player.clear = setTimeout( removePlayerCache, config.cacheLengths.player * 1000, uuid );
         return [ uuid, player.name[ 0 ] ];
     }
 
@@ -55,8 +55,8 @@ async function getName( uuid: string ) {
 
     player.name = [ name.name, now + config.cacheLengths.property * 1000 ];
 
-    clearInterval( player.clear );
-    player.clear = setInterval( removePlayerCache, config.cacheLengths.player * 1000, uuid );
+    clearTimeout( player.clear );
+    player.clear = setTimeout( removePlayerCache, config.cacheLengths.player * 1000, uuid );
     
     return [ uuid, player.name[ 0 ] ];
 }
@@ -94,8 +94,8 @@ async function getItemsAndSkills( uuid: string, items: string[ ], skills: string
         } >;
 
         if ( !res?.data.success && !player.collectionSkillsTimeout ) {
-            clearInterval( player.clear );
-            player.clear = setInterval( removePlayerCache, config.cacheLengths.player * 1000, uuid );
+            clearTimeout( player.clear );
+            player.clear = setTimeout( removePlayerCache, config.cacheLengths.player * 1000, uuid );
             return [ uuid, undefined, undefined, -1 ];
         }
 
@@ -174,8 +174,8 @@ async function getItemsAndSkills( uuid: string, items: string[ ], skills: string
         filteredSkills = undefined;
     }
 
-    clearInterval( player.clear );
-    player.clear = setInterval( removePlayerCache, config.cacheLengths.player * 1000, uuid );
+    clearTimeout( player.clear );
+    player.clear = setTimeout( removePlayerCache, config.cacheLengths.player * 1000, uuid );
 
     return [
         uuid,
