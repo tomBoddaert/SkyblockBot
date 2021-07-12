@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
+import { clear, time } from 'console';
 
 import { IConfig, IItemSkillNames } from 'types';
 
@@ -13,22 +14,64 @@ const cache: {
         collection?: { [ id: string ]: number },
         skills?: { [ id: string ]: number },
         collectionSkillsTimeout?: number
-        clear?: number
+        clear: CustomTimeout
     }
 } = { };
+
+class CustomTimeout {
+
+    args: any[ ];
+    timeout: ReturnType< typeof setTimeout >;
+
+    constructor(
+        private callBack: ( ...args: any[ ] ) => void,
+        private length: number,
+        ...args: any[ ] ) {
+
+        this.args = args;
+        this.timeout = setTimeout( callBack, length * 1000, ...args );
+
+    }
+
+    cancel( ) {
+        clearTimeout( this.timeout );
+    }
+
+    trigger( ) {
+
+        clearTimeout( this.timeout );
+        this.callBack( ...this.args );
+
+    }
+
+    reset( ) {
+
+        clearTimeout( this.timeout );
+        this.timeout = setTimeout( this.callBack, this.length * 1000, ...this.args );
+
+    }
+
+}
 
 function removePlayerCache( uuid: string ) {
     delete cache[ uuid ];
 }
 
+function purgeCache( ) {
+
+    Object.values( cache ).forEach( player => {
+        player.clear.trigger( );
+    } );
+
+}
+
 async function getName( uuid: string ) {
-    
+
     const now = Date.now( );
     let player = cache[ uuid ];
 
     if ( player && player.name && ( player.name as [ string, number ] )[ 1 ] >= now ) {
-        clearTimeout( player.clear );
-        player.clear = setTimeout( removePlayerCache, config.cacheLengths.player * 1000, uuid );
+        player.clear.reset( );
         return [ uuid, player.name[ 0 ] ];
     }
 
@@ -49,15 +92,14 @@ async function getName( uuid: string ) {
     );
 
     if ( !player ) {
-        player = { };
+        player = { clear: new CustomTimeout( removePlayerCache, config.cacheLengths.player, uuid ) };
         cache[ uuid ] = player;
     }
 
     player.name = [ name.name, now + config.cacheLengths.property * 1000 ];
 
-    clearTimeout( player.clear );
-    player.clear = setTimeout( removePlayerCache, config.cacheLengths.player * 1000, uuid );
-    
+    player.clear.reset( );
+
     return [ uuid, player.name[ 0 ] ];
 }
 
@@ -72,6 +114,11 @@ async function getItemsAndSkills( uuid: string, items: string[ ], skills: string
     let player = cache[ uuid ];
 
     if ( !player || ( player.collectionSkillsTimeout ?? -1 ) < now ) {
+
+        if ( !player ) {
+            player = { clear: new CustomTimeout( removePlayerCache, config.cacheLengths.player, uuid ) };
+            cache[ uuid ] = player;
+        }
 
         const res = ( await axios.get(
             `https://api.hypixel.net/skyblock/profiles?key=${ apiKey }&uuid=${ uuid }`,
@@ -94,8 +141,7 @@ async function getItemsAndSkills( uuid: string, items: string[ ], skills: string
         } >;
 
         if ( !res?.data.success && !player.collectionSkillsTimeout ) {
-            clearTimeout( player.clear );
-            player.clear = setTimeout( removePlayerCache, config.cacheLengths.player * 1000, uuid );
+            player.clear.reset( );
             return [ uuid, undefined, undefined, -1 ];
         }
 
@@ -105,7 +151,7 @@ async function getItemsAndSkills( uuid: string, items: string[ ], skills: string
 
                 player.collection = undefined;
                 player.skills = undefined;
-                player.collectionSkillsTimeout = now;
+                player.collectionSkillsTimeout = now + config.cacheLengths.property * 1000;
 
             } else {
 
@@ -174,8 +220,7 @@ async function getItemsAndSkills( uuid: string, items: string[ ], skills: string
         filteredSkills = undefined;
     }
 
-    clearTimeout( player.clear );
-    player.clear = setTimeout( removePlayerCache, config.cacheLengths.player * 1000, uuid );
+    player.clear.reset( );
 
     return [
         uuid,
@@ -193,5 +238,6 @@ function logCache( ) {
 export {
     getName,
     getItemsAndSkills,
-    logCache
+    logCache,
+    purgeCache
 }

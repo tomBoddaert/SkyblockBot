@@ -18,6 +18,7 @@ import set_prefix from './set_prefix';
 import set_api_key from './set_api_key';
 import set_channel from './set_channel';
 import set_cron from './set_cron';
+import purge_cache from './purge_cache';
 
 const commands: ICommand[ ] = [
     help,
@@ -36,7 +37,8 @@ const commands: ICommand[ ] = [
     set_prefix,
     set_api_key,
     set_channel,
-    set_cron
+    set_cron,
+    purge_cache
 ]
 
 export default commands;
