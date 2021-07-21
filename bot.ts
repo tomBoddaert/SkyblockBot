@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'fs/promises';
-import { Client, Collection, GuildMember, TextChannel } from 'discord.js';
+import { Client, Collection, Guild, GuildMember, TextChannel } from 'discord.js';
 import { scheduledJobs, scheduleJob } from 'node-schedule';
 
 import { IConfig, IGuildConfig, IGuildConfigs } from 'types';
@@ -21,7 +21,7 @@ export default async ( ) => {
 
             if ( guildConfig.cron ) {
                 scheduleJob( guildId, guildConfig.cron, ( ) => 
-                    leaderboard( guildConfig, config, client ).catch( ( ) => undefined )
+                    leaderboard( guildId, guildConfig, config, client ).catch( ( ) => undefined )
                 );
             }
 
@@ -37,7 +37,13 @@ export default async ( ) => {
         // If message is from a bot, stop
         if ( message.author.bot ) return;
 
-        const guildConfig: IGuildConfig | undefined = guilds[ message.guild?.id ?? '' ];
+        let guildConfig: IGuildConfig | undefined = guilds[ message.guild?.id ?? '' ];
+
+        // If the guild has not been setup, set it up
+        if ( message.guild && !guildConfig ) {
+            addGuild( message.guild );
+            guildConfig = await guilds[ message.guild.id ];
+        }
 
         // If the message does not start with the prefix, stop
         if ( !message.content.startsWith( guildConfig?.prefix ?? config.defaultPrefix ) ) return;
@@ -110,53 +116,7 @@ export default async ( ) => {
     } );
 
     // Setup guild config when added
-    client.on( 'guildCreate', async guild => {
-
-        const textChannels = guild.channels.cache.filter(
-            channel => channel.isText( ) && ( channel.permissionsFor( guild.me as GuildMember )?.has( 'SEND_MESSAGES' ) ?? false )
-        );
-
-        if ( !textChannels.reduce( acc => acc + 1, 0 ) ) {
-            return guild.leave( );
-        }
-
-        const channel = ( textChannels.find( channel => channel.name === 'general' )
-            ?? textChannels.first( ) ) as TextChannel;
-
-        guilds[ guild.id ] = {
-
-            channelId: channel.id,
-            prefix: null,
-            defaultCooldown: null,
-            apiKey: null,
-            itemIds: [ ],
-            skillIds: [ ],
-            playerIds: [ ],
-            cron: null,
-            icon: null,
-            colour: null
-            
-        }
-
-        await writeFile( './data/guilds.json', JSON.stringify( guilds ) )
-            .catch( async error => {
-                delete guilds[ guild.id ];
-                await channel.send( 'Error setting up guild configuration, please contact my owner or developer!' );
-                await guild.leave( );
-                console.error( error );
-            } );
-
-        if ( !guild.roles.cache.some( role => role.name.toLowerCase( ) === config.adminRoleName ) ) {
-            await guild.roles.create( { data: { name: config.adminRoleName } } )
-                .catch( async ( ) => {
-                    await channel.send( `Please create a role called \`${ config.adminRoleName }\` because I couldn\'t!` )
-                } );
-        }
-
-        await channel.send( `Please use \`${ config.defaultPrefix }set_api_key\` to add your skyblock API key` );
-        await channel.send( `For help, type \`${ config.defaultPrefix }help\`` );
-
-    } );
+    client.on( 'guildCreate', addGuild );
 
     // Remove guild config when removed
     client.on( 'guildDelete', async guild => {
@@ -183,3 +143,51 @@ export default async ( ) => {
     }
 
 };
+
+async function addGuild( guild: Guild ) {
+
+    const textChannels = guild.channels.cache.filter(
+        channel => channel.isText( ) && ( channel.permissionsFor( guild.me as GuildMember )?.has( 'SEND_MESSAGES' ) ?? false )
+    );
+
+    if ( !textChannels.reduce( acc => acc + 1, 0 ) ) {
+        return guild.leave( );
+    }
+
+    const channel = ( textChannels.find( channel => channel.name === 'general' )
+        ?? textChannels.first( ) ) as TextChannel;
+
+    guilds[ guild.id ] = {
+
+        channelId: channel.id,
+        prefix: null,
+        defaultCooldown: null,
+        apiKey: null,
+        itemIds: [ ],
+        skillIds: [ ],
+        playerIds: [ ],
+        cron: null,
+        icon: null,
+        colour: null
+        
+    }
+
+    await writeFile( './data/guilds.json', JSON.stringify( guilds ) )
+        .catch( async error => {
+            delete guilds[ guild.id ];
+            await channel.send( 'Error setting up guild configuration, please contact my owner or developer!' );
+            await guild.leave( );
+            console.error( error );
+        } );
+
+    if ( !guild.roles.cache.some( role => role.name.toLowerCase( ) === config.adminRoleName ) ) {
+        await guild.roles.create( { data: { name: config.adminRoleName } } )
+            .catch( async ( ) => {
+                await channel.send( `Please create a role called \`${ config.adminRoleName }\` because I couldn\'t!` )
+            } );
+    }
+
+    await channel.send( `Please use \`${ config.defaultPrefix }set_api_key\` to add your skyblock API key` );
+    await channel.send( `For help, type \`${ config.defaultPrefix }help\`` );
+
+}

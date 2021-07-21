@@ -4,6 +4,7 @@ import { scheduledJobs, scheduleJob } from 'node-schedule';
 import leaderboard from '../send_leaderboard';
 
 import { ICommand, IGuildConfigs } from 'types';
+import { Guild } from 'discord.js';
 
 const command: ICommand = {
 
@@ -43,13 +44,13 @@ const command: ICommand = {
             scheduledJobs[ message.guild.id ]?.cancel( );
 
             let success = scheduleJob( message.guild.id, args.slice( 0, 5 ).join( ' ' ), ( ) =>
-                leaderboard( guildConfig, config, message.client ).catch( ( ) => undefined )
+                leaderboard( ( message.guild as Guild ).id, guildConfig, config, message.client ).catch( ( ) => undefined )
             );
 
             if ( !success ) {
                 scheduledJobs[ message.guild.id ].cancel( );
                 if ( guildConfig.cron ) scheduleJob( message.guild.id, guildConfig.cron, ( ) =>
-                    leaderboard( guildConfig, config, message.client ).catch( ( ) => undefined )
+                    leaderboard( ( message.guild as Guild ).id, guildConfig, config, message.client ).catch( ( ) => undefined )
                 );
                 return await message.reply( `that not a valid cron expression ( make sure ranges are in incresing order ), please use \`${ guildConfig.prefix ?? config.defaultPrefix }set_cron [ cron expression ]\`!` );
             }

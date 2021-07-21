@@ -2,7 +2,7 @@ import { writeFile } from "fs/promises";
 
 import { IConfig } from "types";
 
-export default async ( currentVersion: [ number, number, number ], config: IConfig ) => {
+export default async ( currentVersion: [ number, number, number ], config: IConfig, version: string ) => {
 
     if ( currentVersion[ 0 ] <= 1 && ( currentVersion[ 0 ] === 1 ? currentVersion[ 1 ] < 1 : true ) ) {
         config.cacheLengths = {
@@ -16,8 +16,8 @@ export default async ( currentVersion: [ number, number, number ], config: IConf
         }
     }
 
-    config.version = '1.1.0';
+    config.version = version;
 
-    await writeFile( './config.json', JSON.stringify( config ) );
+    await writeFile( './config.json', JSON.stringify( config, null, 4 ) );
 
 };

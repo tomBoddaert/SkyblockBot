@@ -4,7 +4,7 @@ import { getName, getItemsAndSkills, logCache } from './apiCalls';
 
 const itemSkillNames = ( await import( './data/itemSkillNames.json' ) ).default as IItemSkillNames;
 
-const leaderboard = async ( guildConfig: IGuildConfig, config: IConfig, client: Client ) => {
+const leaderboard = async ( guildId: string, guildConfig: IGuildConfig, config: IConfig, client: Client ) => {
     
     if ( !guildConfig.apiKey ) {
         return await ( client.channels.cache.get( guildConfig.channelId ) as TextChannel ).send( `API key not set! Please use \`${ guildConfig.prefix ?? config.defaultPrefix }set_api_key < Hypixel API key >\`!` );
@@ -76,7 +76,7 @@ ${ itemSkillNames.skills[ skillId ] } xp`,
         newEmbed.addField( names[ memberId ], '( not on SkyBlock )');
     } );
 
-    const channel = client.channels.cache.get( guildConfig.channelId );
+    const channel = client.guilds.cache.get( guildId )?.channels.cache.get( guildConfig.channelId );
 
     if ( channel?.type !== 'text' ) {
         throw new Error( 'Channel not found or not text ( send_leaderboard )!' );
