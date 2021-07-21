@@ -21,7 +21,7 @@ const versionStr = ( await import( './package.json' ) ).default.version;
         throw new Error( 'Token file ( ./data/token ) non-existant! A template file has been generated!' );
     }
 
-    const token: string = ( await readFile( './data/token' ) ).toString( );
+    const token: string = ( await readFile( './data/token' ) ).toString( ).replace( /\n/g, '' );
 
     if ( token === 'xxxxxxxxxxxxxxxxxxxxxxxx.xxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxx' ) {
         throw new Error( 'Token file ( ./data/token ) must be replaced with your bot token!' );

@@ -131,7 +131,7 @@ export default async ( ) => {
 
     // Log in
     try {
-        await client.login( ( await readFile( './data/token' ) ).toString( ) );
+        await client.login( ( await readFile( './data/token' ) ).toString( ).replace( /\n/g, '' ) );
     } catch ( error ) {
 
         if ( error.code === 'TOKEN_INVALID' ) {
